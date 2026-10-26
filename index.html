@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Free JPG to PDF converter. Upload multiple images, preview them, and download one PDF.">
+<title>JPG to PDF Converter | Free Online Tool</title>
+<style>
+:root{--blue:#2457e6;--ink:#182230;--muted:#64748b;--line:#dce3ee;--bg:#f5f7fb;--white:#fff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Arial,Helvetica,sans-serif;color:var(--ink)}
+header{background:linear-gradient(120deg,#173db5,#3977f6);color:#fff;padding:25px 16px 30px;text-align:center}
+header h1{margin:0 0 9px;font-size:clamp(25px,5vw,36px)}header p{margin:0;color:#e8efff;font-size:15px}
+main{max-width:900px;margin:22px auto;padding:0 14px 35px}
+.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 8px 28px #1e3a8a0b;margin-bottom:16px}
+h2{font-size:19px;margin:0 0 14px}.muted{color:var(--muted);font-size:14px;line-height:1.5}
+.drop{display:block;border:2px dashed #9bb5ff;background:#f7f9ff;border-radius:15px;text-align:center;padding:27px 12px;cursor:pointer}
+.drop .icon{font-size:38px;display:block;margin-bottom:8px}.drop strong{display:block;font-size:17px;color:#2446ae}.drop span{display:block;color:var(--muted);font-size:13px;margin-top:8px}
+input[type=file]{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden}
+button,.button{border:0;border-radius:10px;padding:12px 17px;font-weight:700;font-size:15px;cursor:pointer;display:inline-block}
+.primary{background:var(--blue);color:white}.secondary{background:#eaf0ff;color:#2149c4}.danger{background:#fff0f0;color:#b42318}.buttonrow{display:flex;gap:9px;flex-wrap:wrap;margin-top:15px}
+.toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:12px}
+.photo{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff;min-width:0}
+.photo img{display:block;width:100%;height:130px;object-fit:contain;background:#f0f3f9}
+.photo .name{font-size:12px;padding:8px 8px 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.photo .remove{margin:6px 8px 9px;padding:7px 10px;font-size:12px}
+.options{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}.options label{font-size:14px;color:#475569;display:flex;align-items:center;gap:7px}
+select{border:1px solid var(--line);background:white;border-radius:8px;padding:9px;color:var(--ink)}
+#status{margin-top:12px;color:#2149c4;font-size:14px}.pdfbox{background:#f7f9fc;border:1px solid var(--line);border-radius:12px;padding:15px}
+.pdfpage{width:min(100%,440px);margin:0 auto;background:#fff;border:1px solid #d4dbe7;box-shadow:0 4px 14px #0000000d;min-height:180px;padding:15px;display:flex;flex-direction:column;gap:8px}
+.pdfpage img{max-width:100%;max-height:220px;object-fit:contain;margin:auto;display:block}
+.empty{text-align:center;padding:25px 8px;color:var(--muted);font-size:14px}
+footer{text-align:center;color:#718096;padding:20px;font-size:13px}
+button:disabled{opacity:.45;cursor:not-allowed}
+@media(max-width:520px){.card{padding:15px}.drop{padding:22px 8px}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.photo img{height:115px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>JPG to PDF Converter</h1>
+  <p id="tagline">Convert multiple photos into one PDF — free and easy.</p>
+</header>
+<main>
+  <section class="card">
+    <h2 id="step1">1. Choose photos / फोटो चुनें</h2>
+    <label class="drop" for="imageInput" id="dropZone">
+      <span class="icon">📷</span>
+      <strong id="chooseText">Tap to upload photos</strong>
+      <span id="hintText">Select one or many JPG, JPEG or PNG images from your gallery.</span>
+    </label>
+    <input id="imageInput" type="file" accept="image/jpeg,image/png,.jpg,.jpeg,.png" multiple>
+    <div class="options">
+      <label><span id="paperText">Paper size</span>
+        <select id="paper"><option value="a4">A4</option><option value="letter">Letter</option><option value="a5">A5</option><option value="image">Fit to image</option></select>
+      </label>
+      <label><span id="orientationText">Orientation</span>
+        <select id="orientation"><option value="p">Portrait</option><option value="l">Landscape</option></select>
+      </label>
+    </div>
+    <div class="buttonrow">
+      <button class="primary" id="createBtn" disabled>Create PDF / PDF बनाएं</button>
+      <button class="secondary" id="clearBtn" disabled>Clear all / सभी हटाएं</button>
+    </div>
+    <div id="status" role="status" aria-live="polite"></div>
+  </section>
+
+  <section class="card">
+    <div class="toolbar"><h2 id="previewTitle">2. Photo preview / फोटो प्रीव्यू</h2><span class="muted" id="count">0 photos</span></div>
+    <div id="photoGrid" class="grid"><div class="empty" id="emptyText">Your selected photos will appear here.</div></div>
+  </section>
+
+  <section class="card">
+    <h2 id="pdfTitle">3. PDF preview / PDF प्रीव्यू</h2>
+    <div class="pdfbox">
+      <div id="pdfPreview" class="pdfpage"><p class="muted" id="pdfEmpty">Create PDF to see the preview here.</p></div>
+    </div>
+    <div class="buttonrow">
+      <button class="primary" id="downloadBtn" disabled>Download PDF / PDF डाउनलोड करें</button>
+    </div>
+  </section>
+  <p class="muted" style="text-align:center">Privacy: Your photos are converted in your browser and are not uploaded to a server.</p>
+</main>
+<footer>Free JPG to PDF Converter • Made for mobile and desktop</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+(() => {
+  const input = document.getElementById('imageInput');
+  const grid = document.getElementById('photoGrid');
+  const createBtn = document.getElementById('createBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const status = document.getElementById('status');
+  const count = document.getElementById('count');
+  const pdfPreview = document.getElementById('pdfPreview');
+  let photos = [];
+  let pdfBlobUrl = null;
+  let pdfBlob = null;
+  let lang = 'en';
+
+  const copy = {
+    en: {
+      tagline:'Convert multiple photos into one PDF — free and easy.',
+      choose:'Tap to upload photos', hint:'Select one or many JPG, JPEG or PNG images from your gallery.',
+      create:'Create PDF', clear:'Clear all', preview:'Photo preview', paper:'Paper size', orientation:'Orientation',
+      empty:'Your selected photos will appear here.', pdfEmpty:'Create PDF to see the preview here.',
+      download:'Download PDF', noPhotos:'Please upload at least one photo first.',
+      making:'Creating your PDF…', ready:'PDF is ready to download.', bad:'Please select valid JPG, JPEG or PNG image files.',
+      photos:'photos', photo:'photo', remove:'Remove', fileError:'Some files could not be read. Please try another image.',
+      portrait:'Portrait', landscape:'Landscape', fit:'Fit to image'
+    },
+    hi: {
+      tagline:'कई फ़ोटो को एक PDF में बदलें — मुफ़्त और आसान।',
+      choose:'फ़ोटो अपलोड करने के लिए टैप करें', hint:'गैलरी से एक या कई JPG, JPEG या PNG फ़ोटो चुनें।',
+      create:'PDF बनाएं', clear:'सभी हटाएं', preview:'फ़ोटो प्रीव्यू', paper:'पेपर साइज़', orientation:'दिशा',
+      empty:'आपकी चुनी हुई फ़ोटो यहाँ दिखाई देंगी।', pdfEmpty:'प्रीव्यू देखने के लिए PDF बनाएं।',
+      download:'PDF डाउनलोड करें', noPhotos:'पहले कम से कम एक फ़ोटो अपलोड करें।',
+      making:'PDF बनाई जा रही है…', ready:'PDF डाउनलोड करने के लिए तैयार है।', bad:'कृपया सही JPG, JPEG या PNG फ़ाइल चुनें।',
+      photos:'फ़ोटो', photo:'फ़ोटो', remove:'हटाएं', fileError:'कुछ फ़ाइलें नहीं खुल सकीं। दूसरी फ़ोटो चुनें।',
+      portrait:'पोर्ट्रेट', landscape:'लैंडस्केप', fit:'फ़ोटो के अनुसार'
+    }
+  };
+  function t(key){ return copy[lang][key] || copy.en[key] || key; }
+  function setLanguage(next) {
+    lang = next;
+    document.documentElement.lang = lang === 'hi' ? 'hi' : 'en';
+    document.getElementById('tagline').textContent = t('tagline');
+    document.getElementById('chooseText').textContent = t('choose');
+    document.getElementById('hintText').textContent = t('hint');
+    document.getElementById('createBtn').textContent = t('create') + ' / ' + (lang === 'hi' ? 'Create PDF' : 'PDF बनाएं');
+    document.getElementById('clearBtn').textContent = t('clear') + ' / ' + (lang === 'hi' ? 'Clear all' : 'सभी हटाएं');
+    document.getElementById('previewTitle').textContent = '2. ' + t('preview') + ' / ' + (lang === 'hi' ? 'Photo preview' : 'फोटो प्रीव्यू');
+    document.getElementById('paperText').textContent = t('paper');
+    document.getElementById('orientationText').textContent = t('orientation');
+    document.getElementById('downloadBtn').textContent = t('download') + ' / ' + (lang === 'hi' ? 'Download PDF' : 'PDF डाउनलोड करें');
+    document.getElementById('pdfEmpty').textContent = t('pdfEmpty');
+    document.getElementById('emptyText').textContent = t('empty');
+    document.getElementById('paper').options[3].text = t('fit');
+    document.getElementById('orientation').options[0].text = t('portrait');
+    document.getElementById('orientation').options[1].text = t('landscape');
+    renderPhotos();
+  }
+  // Small language switch: visible at the top of the upload card.
+  const languageBar = document.createElement('div');
+  languageBar.className = 'toolbar';
+  languageBar.style.marginTop = '14px';
+  languageBar.innerHTML = '<span class="muted">Language / भाषा</span><div><button type="button" class="secondary" id="enBtn">English</button> <button type="button" class="secondary" id="hiBtn">हिन्दी</button></div>';
+  document.querySelector('.card').appendChild(languageBar);
+  document.getElementById('enBtn').addEventListener('click', () => setLanguage('en'));
+  document.getElementById('hiBtn').addEventListener('click', () => setLanguage('hi'));
+
+  function revokePdf() {
+    if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
+    pdfBlobUrl = null; pdfBlob = null;
+    downloadBtn.disabled = true;
+  }
+  function resetPdf() {
+    revokePdf();
+    pdfPreview.innerHTML = '';
+    const p = document.createElement('p');
+    p.className = 'muted'; p.textContent = t('pdfEmpty');
+    pdfPreview.appendChild(p);
+    status.textContent = '';
+  }
+  function renderPhotos() {
+    grid.innerHTML = '';
+    if (!photos.length) {
+      const e = document.createElement('div'); e.className = 'empty'; e.textContent = t('empty'); grid.appendChild(e);
+    } else {
+      photos.forEach((photo, index) => {
+        const box = document.createElement('div'); box.className = 'photo';
+        const img = document.createElement('img'); img.src = photo.data; img.alt = photo.file.name;
+        const name = document.createElement('div'); name.className = 'name'; name.textContent = photo.file.name;
+        const remove = document.createElement('button'); remove.className = 'danger remove'; remove.textContent = t('remove');
+        remove.addEventListener('click', () => { photos.splice(index, 1); renderPhotos(); resetPdf(); });
+        box.append(img, name, remove); grid.appendChild(box);
+      });
+    }
+    count.textContent = photos.length + ' ' + (lang === 'hi' ? t('photo') : (photos.length === 1 ? t('photo') : t('photos')));
+    createBtn.disabled = photos.length === 0;
+    clearBtn.disabled = photos.length === 0;
+  }
+  input.addEventListener('change', async () => {
+    status.textContent = '';
+    const files = Array.from(input.files || []);
+    let failed = false;
+    for (const file of files) {
+      if (!['image/jpeg','image/png'].includes(file.type) && !/\.(jpe?g|png)$/i.test(file.name)) { failed = true; continue; }
+      try {
+        const data = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        photos.push({file, data});
+      } catch { failed = true; }
+    }
+    input.value = '';
+    renderPhotos(); resetPdf();
+    if (failed) status.textContent = t('fileError');
+    if (photos.length) {
+      // Automatically create the PDF as soon as photos are selected.
+      await generatePdf();
+    }
+  });
+  document.getElementById('dropZone').addEventListener('dragover', e => { e.preventDefault(); });
+  document.getElementById('dropZone').addEventListener('drop', e => {
+    e.preventDefault();
+    if (e.dataTransfer && e.dataTransfer.files.length) {
+      const dt = new DataTransfer();
+      Array.from(e.dataTransfer.files).forEach(f => dt.items.add(f));
+      input.files = dt.files;
+      input.dispatchEvent(new Event('change'));
+    }
+  });
+  clearBtn.addEventListener('click', () => { photos = []; renderPhotos(); resetPdf(); });
+  async function generatePdf() {
+    if (!photos.length) { status.textContent = t('noPhotos'); return; }
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+      status.textContent = 'PDF library could not load. Check your internet connection and refresh.';
+      return;
+    }
+    status.textContent = t('making');
+    createBtn.disabled = true;
+    try {
+      const { jsPDF } = window.jspdf;
+      const paper = document.getElementById('paper').value;
+      const orientation = document.getElementById('orientation').value;
+      let pdf;
+      if (paper === 'image') {
+        const first = await loadImage(photos[0].data);
+        const w = first.naturalWidth, h = first.naturalHeight;
+        pdf = new jsPDF({orientation: w > h ? 'l' : 'p', unit:'px', format:[w,h], compress:true});
+      } else {
+        pdf = new jsPDF({orientation, unit:'mm', format:paper, compress:true});
+      }
+      for (let i = 0; i < photos.length; i++) {
+        const img = await loadImage(photos[i].data);
+        if (i > 0) {
+          if (paper === 'image') {
+            const w = img.naturalWidth, h = img.naturalHeight;
+            pdf.addPage([w,h], w > h ? 'l' : 'p');
+          } else pdf.addPage(paper, orientation);
+        }
+        const pageW = pdf.internal.pageSize.getWidth();
+        const pageH = pdf.internal.pageSize.getHeight();
+        const margin = paper === 'image' ? 0 : 8;
+        const maxW = pageW - margin*2, maxH = pageH - margin*2;
+        const ratio = Math.min(maxW / img.naturalWidth, maxH / img.naturalHeight);
+        const w = img.naturalWidth * ratio, h = img.naturalHeight * ratio;
+        const x = (pageW - w) / 2, y = (pageH - h) / 2;
+        const fmt = photos[i].file.type === 'image/png' ? 'PNG' : 'JPEG';
+        pdf.addImage(photos[i].data, fmt, x, y, w, h, undefined, 'FAST');
+      }
+      revokePdf();
+      pdfBlob = pdf.output('blob');
+      pdfBlobUrl = URL.createObjectURL(pdfBlob);
+      pdfPreview.innerHTML = '';
+      pdfPreview.style.cssText = 'width:100%;min-height:430px;padding:12px;display:block;overflow:auto';
+      // Show a reliable in-page preview using the chosen photos. Some mobile browsers
+      // do not render PDF files inside an iframe, even though the PDF downloads correctly.
+      const previewNote = document.createElement('p');
+      previewNote.className = 'muted';
+      previewNote.style.cssText = 'text-align:center;margin:0 0 12px';
+      previewNote.textContent = lang === 'hi'
+        ? 'PDF प्रीव्यू (हर फ़ोटो PDF का एक पेज है)'
+        : 'PDF preview (each photo is one page in your PDF)';
+      pdfPreview.appendChild(previewNote);
+      photos.forEach((photo, index) => {
+        const page = document.createElement('div');
+        page.style.cssText = 'background:#fff;border:1px solid #d4dbe7;box-shadow:0 2px 8px #0000000b;margin:0 auto 14px;padding:12px;max-width:520px;min-height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px';
+        const label = document.createElement('div');
+        label.style.cssText = 'font-size:12px;color:#64748b;align-self:flex-start';
+        label.textContent = (lang === 'hi' ? 'पेज ' : 'Page ') + (index + 1);
+        const image = document.createElement('img');
+        image.src = photo.data;
+        image.alt = photo.file.name;
+        image.style.cssText = 'display:block;max-width:100%;max-height:360px;object-fit:contain';
+        page.append(label, image);
+        pdfPreview.appendChild(page);
+      });
+      // Keep an option to open the actual generated PDF in a separate browser tab.
+      const openPdf = document.createElement('a');
+      openPdf.href = pdfBlobUrl;
+      openPdf.target = '_blank';
+      openPdf.rel = 'noopener';
+      openPdf.textContent = lang === 'hi' ? 'PDF को नए टैब में खोलें' : 'Open actual PDF in a new tab';
+      openPdf.style.cssText = 'display:block;text-align:center;margin:10px auto 0;color:#2457e6;font-size:14px';
+      pdfPreview.appendChild(openPdf);
+      downloadBtn.disabled = false;
+      status.textContent = t('ready');
+      // Bring the preview and download button into view after processing.
+      document.querySelector('#pdfTitle').scrollIntoView({behavior:'smooth', block:'start'});
+    } catch (err) {
+      console.error(err);
+      status.textContent = 'Could not create PDF. Try fewer or smaller photos.';
+    } finally {
+      createBtn.disabled = photos.length === 0;
+    }
+  }
+  createBtn.addEventListener('click', generatePdf);
+  downloadBtn.addEventListener('click', () => {
+    if (!pdfBlobUrl) return;
+    const a = document.createElement('a');
+    a.href = pdfBlobUrl; a.download = 'jpg-to-pdf.pdf';
+    document.body.appendChild(a); a.click(); a.remove();
+  });
+  function loadImage(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
+  }
+  setLanguage('en');
+  renderPhotos();
+})();
+</script>
+</body>
+</html>
